@@ -47,9 +47,9 @@ const Dashboard: React.FC = () => {
   const stats = calcularEstatisticas(disciplinas);
 
   // --- Defina aqui os totais do seu curso ---
-  const TOTAL_OBRIGATORIAS = 120;
-  const TOTAL_LIMITADAS = 40;
-  const TOTAL_LIVRES = 20;
+  const TOTAL_OBRIGATORIAS = 245;
+  const TOTAL_LIMITADAS = 28;
+  const TOTAL_LIVRES = 27;
   const TOTAL_CURSO = TOTAL_OBRIGATORIAS + TOTAL_LIMITADAS + TOTAL_LIVRES;
   // ----------------------------------------
 

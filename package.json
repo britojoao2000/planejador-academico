@@ -2,12 +2,12 @@
   "name": "planejador-academico",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
+  "homepage": "[https://britojoao2000.github.io/planejador-academico](https://SEU-USUARIO-GITHUB.github.io/planejador-academico)",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

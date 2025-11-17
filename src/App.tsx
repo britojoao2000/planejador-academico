@@ -4,13 +4,22 @@ import AppLayout from './components/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Historico from './pages/Historico';
 import Planejador from './pages/Planejador';
+import Login from './pages/Login';
+import { useAuth } from './hooks/useAuth';
 
 function App() {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return null; // O spinner do AuthProvider está cuidando disso
+  }
+
+  // Se NÃO houver usuário, mostre APENAS a página de login
+  if (!user) {
+    return <Login />;
+  }
+
   return (
-    // O DisciplinasProvider precisa estar DENTRO do AppLayout
-    // pois o AppLayout usa o hook useDisciplinas (para import/export).
-    // O AppLayout precisa estar DENTRO das Routes para que 
-    // o <Outlet> funcione.
+    
     <DisciplinasProvider>
       <Routes>
         <Route path="/" element={<AppLayout />}>
