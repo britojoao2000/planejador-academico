@@ -1,5 +1,6 @@
+// Em src/components/DisciplinaCard.tsx
 import React from 'react';
-import { Card, CardContent, Typography, Box, Chip, IconButton, Tooltip } from '@mui/material';
+import { Paper, Typography, Box, Chip, IconButton, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -12,28 +13,53 @@ interface DisciplinaCardProps {
   onEdit: () => void;
 }
 
-// Verifica se os pré-requisitos estão satisfeitos
+// Lógica de verificação de pré-requisitos (movida para dentro)
 const useVerificarRequisitos = (codigoDisciplina: string): boolean => {
   const { disciplinas } = useDisciplinas();
-  
   const disciplinaCatalogo = TODAS_AS_DISCIPLINAS.find(d => d.codigo === codigoDisciplina);
   if (!disciplinaCatalogo || disciplinaCatalogo.prerequisitos.length === 0) {
-    return true; // Não tem requisitos, então está OK
+    return true;
   }
-
   const concluidas = disciplinas
     .filter(d => d.status === 'concluida')
     .map(d => d.codigo);
-
-  // Verifica se TODOS os requisitos estão na lista de concluídas
   return disciplinaCatalogo.prerequisitos.every(req => concluidas.includes(req));
 };
 
+// Nova função para cor da nota (baseada no seu mockup)
+const getGradeColor = (nota?: string): string => {
+  if (!nota) return 'text.secondary';
+  const upperNota = nota.toUpperCase();
+  if (upperNota === 'A') return 'success.main';
+  if (upperNota === 'B') return 'info.main';
+  if (upperNota === 'C') return 'text.primary';
+  if (upperNota === 'D') return 'warning.main';
+  if (upperNota === 'F' || upperNota === '0') return 'error.main';
+  // Para notas numéricas
+  try {
+    const num = parseFloat(nota);
+    if (num >= 9) return 'success.main';
+    if (num >= 7) return 'info.main';
+    if (num >= 5) return 'text.primary';
+    if (num >= 3) return 'warning.main';
+    return 'error.main';
+  } catch {
+    return 'text.secondary';
+  }
+};
 
+// Nova função para o label do tipo
+const getTipoLabel = (tipo: DisciplinaUsuario['tipo']) => {
+  switch(tipo) {
+    case 'obrigatoria': return 'Obrigatória';
+    case 'limitada': return 'Limitada';
+    case 'livre': return 'Livre';
+  }
+}
+
+// Componente do Card redesenhado
 const DisciplinaCard: React.FC<DisciplinaCardProps> = ({ disciplina, onEdit }) => {
   const { deleteDisciplina } = useDisciplinas();
-  
-  // Verifica requisitos apenas se estiver planejada (Recurso 4)
   const requisitosOk = (disciplina.status === 'concluida') 
     ? true 
     : useVerificarRequisitos(disciplina.codigo);
@@ -49,67 +75,77 @@ const DisciplinaCard: React.FC<DisciplinaCardProps> = ({ disciplina, onEdit }) =
     }
   };
 
-  const getTipoLabel = (tipo: DisciplinaUsuario['tipo']) => {
-    switch(tipo) {
-      case 'obrigatoria': return 'Obrigatória';
-      case 'limitada': return 'Limitada';
-      case 'livre': return 'Livre';
-    }
-  }
+  const tipoLabel = getTipoLabel(disciplina.tipo);
+  const gradeColor = getGradeColor(disciplina.nota);
 
   return (
-    <Card variant="outlined">
-      <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+    <Paper 
+      variant="outlined" 
+      sx={{ 
+        p: 2, 
+        bgcolor: 'background.paper', 
+        transition: 'box-shadow 0.2s',
+        '&:hover': {
+          boxShadow: 3, // Elevação no hover
+        },
+        // Mostra os ícones no hover (como no seu mockup)
+        '& .action-icons': {
+          opacity: 0,
+          transition: 'opacity 0.2s',
+        },
+        '&:hover .action-icons': {
+          opacity: 1,
+        }
+      }}
+    >
+      <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+        {/* Lado Esquerdo: Infos */}
+        <Box>
           <Chip 
-            label={getTipoLabel(disciplina.tipo)} 
+            label={tipoLabel} 
             size="small" 
-            color={disciplina.tipo === 'obrigatoria' ? 'primary' : 'default'}
             variant="outlined"
-            sx={{ mb: 1 }}
+            color={disciplina.tipo === 'obrigatoria' ? 'primary' : 'default'}
+            sx={{ mb: 1, fontWeight: 'medium' }}
           />
-          <Box>
-            <IconButton size="small" onClick={onEdit}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton size="small" onClick={handleDelete}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Box>
-        </Box>
-        
-        <Typography variant="h6" component="div" gutterBottom>
-          {disciplina.nome}
-        </Typography>
-
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-          <Typography variant="body2" color="text.secondary">
-            {disciplina.codigo}
+          <Typography variant="h6" component="div" fontWeight="medium" gutterBottom>
+            {disciplina.nome}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {disciplina.creditos} créditos
+            {disciplina.codigo} • {disciplina.creditos} créditos
           </Typography>
+          
+          {/* Nota (se concluída) */}
+          {disciplina.status === 'concluida' && disciplina.nota && (
+            <Typography variant="body1" fontWeight="bold" sx={{ color: gradeColor, mt: 0.5 }}>
+              Nota: {disciplina.nota}
+            </Typography>
+          )}
+
+          {/* Aviso de Requisito (se planejada) */}
+          {disciplina.status === 'planejada' && !requisitosOk && (
+            <Tooltip title="Pré-requisitos não concluídos!">
+              <Box display="flex" alignItems="center" color="error.main" mt={1}>
+                <WarningIcon fontSize="small" sx={{ mr: 0.5 }} />
+                <Typography variant="body2" color="error" fontWeight="medium">
+                  Requisitos pendentes
+                </Typography>
+              </Box>
+            </Tooltip>
+          )}
         </Box>
 
-        {disciplina.status === 'concluida' && disciplina.nota && (
-          <Typography variant="body1" color="primary" fontWeight="bold">
-            Nota: {disciplina.nota}
-          </Typography>
-        )}
-
-        {disciplina.status === 'planejada' && !requisitosOk && (
-          <Tooltip title="Pré-requisitos não concluídos!">
-            <Box display="flex" alignItems="center" color="error.main" mt={1}>
-              <WarningIcon fontSize="small" sx={{ mr: 0.5 }} />
-              <Typography variant="body2" color="error">
-                Requisitos pendentes
-              </Typography>
-            </Box>
-          </Tooltip>
-        )}
-
-      </CardContent>
-    </Card>
+        {/* Lado Direito: Ações */}
+        <Box className="action-icons" sx={{ display: 'flex', gap: 1 }}>
+          <IconButton size="small" onClick={onEdit} aria-label="Editar">
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton size="small" onClick={handleDelete} aria-label="Excluir">
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
+    </Paper>
   );
 };
 
