@@ -18,21 +18,17 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import SettingsIcon from '@mui/icons-material/Settings';
 import DisciplinaModal from './DisciplinaModal';
-import { useAuth } from '../hooks/useAuth'; // Importe o useAuth
-// useDisciplinas removed from this layout since it's unused here
+import { useAuth } from '../hooks/useAuth';
 import * as firestoreService from '../services/firestoreService';
 import { downloadJson } from '../utils/dataUtils';
 
 const AppLayout: React.FC = () => {
-  // Estado do Modal
   const [modalOpen, setModalOpen] = useState(false);
   
-  // Estado do Menu de Configurações (Recurso 7)
-  const { user, linkGoogleAccount, logout } = useAuth(); // Puxe as funções de auth
+  const { user, linkGoogleAccount, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Navegação por Abas
   const location = useLocation();
   const currentTab = location.pathname;
 
@@ -43,8 +39,6 @@ const AppLayout: React.FC = () => {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
-
-  // --- Funções de Import/Export (Recurso 7) ---
 
   const handleExport = async () => {
     if (!user) return;
@@ -59,7 +53,6 @@ const AppLayout: React.FC = () => {
   };
 
   const handleImportClick = () => {
-    // Aciona o input de arquivo escondido
     fileInputRef.current?.click();
     handleMenuClose();
   };
@@ -88,11 +81,6 @@ const AppLayout: React.FC = () => {
     }
     event.target.value = '';
   };
-
-  // --- Fim Import/Export ---
-
-  // --- Funções de Auth ---
-
   const handleLink = () => {
     handleMenuClose();
     linkGoogleAccount();
@@ -102,9 +90,6 @@ const AppLayout: React.FC = () => {
     handleMenuClose();
     logout();
   };
-  
-  // --- Fim Auth ---
-
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -115,7 +100,7 @@ const AppLayout: React.FC = () => {
               Planejador Acadêmico
             </Typography>
 
-            {/* Navegação por Abas (Recurso 2) */}
+            {/* Navegação por Abas */}
             <Tabs 
               value={currentTab} 
               textColor="primary" 
@@ -126,7 +111,7 @@ const AppLayout: React.FC = () => {
               <Tab label="Planejador" value="/planejador" to="/planejador" component={Link} />
             </Tabs>
             
-            {/* Menu de Configurações (Recurso 7) */}
+            {/* Menu de Configurações */}
             <Box sx={{ ml: 2 }}>
               <Tooltip title="Configurações e Backup">
                 <IconButton onClick={handleMenuOpen} color="primary">
@@ -169,12 +154,12 @@ const AppLayout: React.FC = () => {
         </Container>
       </AppBar>
 
-      {/* Conteúdo da Página (das rotas) */}
+      {/* Conteúdo da Página */}
       <Container maxWidth="lg" component="main" sx={{ py: 3, flexGrow: 1 }}>
         <Outlet />
       </Container>
 
-      {/* FAB (Recurso 5) */}
+      {/* FAB */}
       <Tooltip title="Adicionar Disciplina">
         <Fab
           color="primary"
@@ -186,7 +171,7 @@ const AppLayout: React.FC = () => {
         </Fab>
       </Tooltip>
 
-      {/* Modal de Adição/Edição (Recurso 5) */}
+      {/* Modal de Adição/Edição */}
       <DisciplinaModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}

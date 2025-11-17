@@ -1,4 +1,3 @@
-// Em src/components/DisciplinaCard.tsx
 import React from 'react';
 import { Paper, Typography, Box, Chip, IconButton, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
@@ -13,7 +12,6 @@ interface DisciplinaCardProps {
   onEdit: () => void;
 }
 
-// Lógica de verificação de pré-requisitos (movida para dentro)
 const useVerificarRequisitos = (codigoDisciplina: string): boolean => {
   const { disciplinas } = useDisciplinas();
   const disciplinaCatalogo = TODAS_AS_DISCIPLINAS.find(d => d.codigo === codigoDisciplina);
@@ -26,7 +24,6 @@ const useVerificarRequisitos = (codigoDisciplina: string): boolean => {
   return disciplinaCatalogo.prerequisitos.every(req => concluidas.includes(req));
 };
 
-// Nova função para cor da nota (baseada no seu mockup)
 const getGradeColor = (nota?: string): string => {
   if (!nota) return 'text.secondary';
   const upperNota = nota.toUpperCase();
@@ -35,7 +32,7 @@ const getGradeColor = (nota?: string): string => {
   if (upperNota === 'C') return 'text.primary';
   if (upperNota === 'D') return 'warning.main';
   if (upperNota === 'F' || upperNota === '0') return 'error.main';
-  // Para notas numéricas
+  
   try {
     const num = parseFloat(nota);
     if (num >= 9) return 'success.main';
@@ -48,7 +45,6 @@ const getGradeColor = (nota?: string): string => {
   }
 };
 
-// Nova função para o label do tipo
 const getTipoLabel = (tipo: DisciplinaUsuario['tipo']) => {
   switch(tipo) {
     case 'obrigatoria': return 'Obrigatória';
@@ -57,7 +53,6 @@ const getTipoLabel = (tipo: DisciplinaUsuario['tipo']) => {
   }
 }
 
-// Componente do Card redesenhado
 const DisciplinaCard: React.FC<DisciplinaCardProps> = ({ disciplina, onEdit }) => {
   const { deleteDisciplina } = useDisciplinas();
   const requisitosOk = (disciplina.status === 'concluida') 
@@ -86,9 +81,8 @@ const DisciplinaCard: React.FC<DisciplinaCardProps> = ({ disciplina, onEdit }) =
         bgcolor: 'background.paper', 
         transition: 'box-shadow 0.2s',
         '&:hover': {
-          boxShadow: 3, // Elevação no hover
+          boxShadow: 3,
         },
-        // Mostra os ícones no hover (como no seu mockup)
         '& .action-icons': {
           opacity: 0,
           transition: 'opacity 0.2s',

@@ -24,7 +24,6 @@ interface DisciplinaFormProps {
   onSuccess: () => void;
 }
 
-// Estado inicial do formulário
 const getInitialState = (disciplina?: DisciplinaUsuario | null) => {
   if (disciplina) {
     // Modo de Edição
@@ -59,12 +58,10 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ formId, disciplinaToEdi
     setFormData(getInitialState(disciplinaToEdit));
   }, [disciplinaToEdit]);
 
-  // Handler para o Autocomplete
   const handleCatalogoChange = (event: any, newValue: CatalogoDisciplina | null) => {
     setFormData(prev => ({
       ...prev,
       catalogo: newValue,
-      // Ao selecionar, atualiza o 'tipo' para o tipo padrão da disciplina
       tipo: newValue?.tipoPadrao || prev.tipo, 
     }));
   };
@@ -95,7 +92,7 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ formId, disciplinaToEdi
       quadrimestre: formData.quadrimestre,
       tipo: formData.tipo,
       status: formData.status,
-      nota: formData.nota || undefined, // Salva undefined se estiver vazio
+      nota: formData.nota || undefined,
     };
 
     try {
@@ -120,14 +117,14 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ formId, disciplinaToEdi
     <Box component="form" id={formId} onSubmit={handleSubmit} sx={{ pt: 1 }}>
       <Grid container spacing={2}>
         
-        {/* Recurso 5: Autocomplete */}
+        {/* Autocomplete */}
         <Grid item xs={12}>
           <Autocomplete
             options={TODAS_AS_DISCIPLINAS}
             getOptionLabel={(option) => `[${option.codigo}] ${option.nome}`}
             value={formData.catalogo}
             onChange={handleCatalogoChange}
-            disabled={loading || !!disciplinaToEdit} // Desativa se estiver editando
+            disabled={loading || !!disciplinaToEdit}
             renderInput={(params) => 
               <TextField {...params} label="Selecionar Disciplina" required />
             }
