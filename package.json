@@ -5,7 +5,7 @@
   "homepage": "[https://britojoao2000.github.io/planejador-academico](https://SEU-USUARIO-GITHUB.github.io/planejador-academico)",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && copy dist\\index.html dist\\404.html",
     "preview": "vite preview",
     "deploy": "gh-pages -d dist"
   },
