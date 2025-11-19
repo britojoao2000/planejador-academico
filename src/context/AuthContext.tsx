@@ -1,4 +1,3 @@
-// Em src/context/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   type User, 
@@ -11,7 +10,7 @@ import {
 import { auth, googleProvider } from '../services/firebaseConfig';
 import { Box, CircularProgress } from '@mui/material';
 
-// 1. Define o tipo do que o contexto irá fornecer
+// O que o contexto vai entregar (dados e funções de login/logout)
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -21,51 +20,49 @@ interface AuthContextType {
   logout: () => Promise<void>;
 }
 
-// 2. Cria o contexto, inicializando como 'undefined'
-// Isso nos ajuda a garantir que ele só será usado dentro de um Provider
+// Cria o contexto. Começa como 'undefined' para forçar o uso dentro do Provider.
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 3. Cria o componente Provedor
+// Componente que "empacota" o app e entrega os dados de autenticação.
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Agora, o useEffect apenas "ouve" o estado de autenticação.
-    // Ele não força mais um login anônimo ao carregar.
+    // Fica escutando as mudanças no estado de autenticação do Firebase.
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setLoading(false); // Marca como carregado assim que temos uma resposta (usuário ou null)
+      setLoading(false); // Acabou o carregamento inicial.
     });
 
-    // Limpa o listener ao desmontar o componente
+    // Para de escutar quando o componente sumir.
     return () => unsubscribe();
   }, []);
 
-  // --- Funções de Autenticação ---
+  // --- Funções de Login/Logout ---
 
   /**
-   * Inicia o fluxo de login com o popup do Google.
+   * Entra com Google (popup).
    */
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
       await firebaseSignInWithPopup(auth, googleProvider);
-      // O onAuthStateChanged vai lidar com a atualização do estado 'user'
+      // O useEffect já cuida de atualizar o 'user'
     } catch (error) {
       console.error("Erro no login com Google:", error);
-      setLoading(false); // Para o loading se houver erro
+      setLoading(false); 
     }
   };
 
   /**
-   * Inicia o fluxo de login anônimo.
+   * Entra como usuário anônimo.
    */
   const signInAnonymously = async () => {
     setLoading(true);
     try {
       await firebaseSignInAnonymously(auth);
-      // O onAuthStateChanged vai lidar com a atualização do estado 'user'
+      // O useEffect já cuida de atualizar o 'user'
     } catch (error) {
       console.error("Erro no login anônimo:", error);
       setLoading(false);
@@ -73,20 +70,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Vincula a conta Google ao usuário anônimo atual.
-   * Isso "converte" a conta anônima em uma conta Google permanente.
+   * Liga a conta Google ao usuário anônimo atual.
    */
   const linkGoogleAccount = async () => {
-    if (!auth.currentUser) {
-      console.error("Nenhum usuário logado para vincular.");
-      return;
-    }
+    if (!auth.currentUser) return; // Se não tem usuário, para.
 
     try {
-      // Esta função do Firebase cuida de vincular o provedor
       await firebaseLinkWithPopup(auth.currentUser, googleProvider);
       alert("Conta Google vinculada com sucesso!");
-      // O onAuthStateChanged vai atualizar o 'user' (agora não mais anônimo)
     } catch (error) {
       console.error("Erro ao vincular conta:", error);
       alert("Erro ao vincular conta. É possível que esta conta Google já esteja em uso por outro usuário.");
@@ -94,12 +85,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Desloga o usuário atual (seja Google ou anônimo).
+   * Sai da conta.
    */
   const logout = async () => {
     try {
       await firebaseSignOut(auth);
-      // O onAuthStateChanged vai definir o 'user' como null
+      // O useEffect já define o 'user' como null
     } catch (error) {
       console.error("Erro ao sair:", error);
     }
@@ -107,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // ------------------------------------
 
-  // Exibe um spinner global enquanto o Firebase verifica o estado de auth
+  // Mostra um spinner enquanto o estado do Firebase não é verificado.
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -116,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }
 
-  // Quando não estiver carregando, fornece o usuário e as funções para os componentes filhos
+  // Entrega o contexto para os componentes filhos.
   return (
     <AuthContext.Provider 
       value={{ 
@@ -133,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-// Helper hook to consume the AuthContext safely
+// Hook que facilita usar o contexto em qualquer lugar.
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within an AuthProvider');

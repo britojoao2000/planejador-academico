@@ -1,10 +1,10 @@
-// Em src/context/CourseContext.tsx
 import React, { createContext, useState, useMemo } from 'react';
 import type { DefinicaoCurso } from '../types/types';
 import { getDefinicaoCurso, getListaDeCursos } from '../data/cursos';
 
-// Pega o primeiro curso da lista como padrão
+// Pega a lista de cursos e define o padrão
 const listaCursos = getListaDeCursos();
+// 'eng-informacao' é o fallback se a lista estiver vazia
 const defaultCursoId = listaCursos[0]?.id || 'eng-informacao';
 const defaultCurso = getDefinicaoCurso(defaultCursoId)!;
 
@@ -19,6 +19,7 @@ export const CourseContext = createContext<CourseContextType | undefined>(undefi
 export const CourseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cursoId, setCursoId] = useState(defaultCursoId);
 
+  // Garante que selectedCourse é atualizado apenas quando cursoId muda
   const selectedCourse = useMemo(() => {
     return getDefinicaoCurso(cursoId) || defaultCurso;
   }, [cursoId]);

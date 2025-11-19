@@ -3,6 +3,7 @@ import { type DisciplinaUsuario } from '../types/types';
 import { useAuth } from '../hooks/useAuth';
 import * as firestoreService from '../services/firestoreService'
 
+// Define a estrutura do contexto das disciplinas
 type DisciplinaContextType = {
   disciplinas: DisciplinaUsuario[];
   loading: boolean;
@@ -21,15 +22,16 @@ export const DisciplinasProvider: React.FC<{ children: React.ReactNode }> = ({ c
   useEffect(() => {
     if (user) {
       setLoading(true);
+      // Configura o monitoramento em tempo real das disciplinas do usuário
       const unsubscribe = firestoreService.getDisciplinasListener(user.uid, (data) => {
         setDisciplinas(data);
         setLoading(false);
       });
 
-      // Limpa o listener ao desmontar ou se o usuário mudar
+      // Para de ouvir as mudanças ao sair
       return () => unsubscribe();
     } else {
-      // Se não há usuário (ex: logout), limpa os dados
+      // Sem usuário, limpa os dados
       setDisciplinas([]);
       setLoading(false);
     }
