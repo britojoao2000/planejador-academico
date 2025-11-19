@@ -6,6 +6,7 @@ import Historico from './pages/Historico';
 import Planejador from './pages/Planejador';
 import Login from './pages/Login';
 import { useAuth } from './hooks/useAuth';
+import { CourseProvider } from './context/CourseContext';
 
 function App() {
   const { user, loading } = useAuth();
@@ -19,8 +20,8 @@ function App() {
   }
 
   return (
-    
-    <DisciplinasProvider>
+    <CourseProvider>
+      <DisciplinasProvider>
       <Routes>
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Dashboard />} />
@@ -28,7 +29,8 @@ function App() {
           <Route path="planejador" element={<Planejador />} />
         </Route>
       </Routes>
-    </DisciplinasProvider>
+      </DisciplinasProvider>
+    </CourseProvider>
   );
 }
 

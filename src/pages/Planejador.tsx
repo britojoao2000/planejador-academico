@@ -21,12 +21,7 @@ import type { DisciplinaUsuario } from '../types/types';
 import DisciplinaCard from '../components/DisciplinaCard';
 import FilterBar, { type TipoFiltro } from '../components/FilterBar';
 import DisciplinaModal from '../components/DisciplinaModal';
-
-// --- CONSTANTES DO CURSO ---
-// (Trazidas do Dashboard para calcular o que falta)
-const TOTAL_OBRIGATORIAS = 245;
-const TOTAL_LIMITADAS = 28;
-const TOTAL_LIVRES = 27;
+import { useCourse } from '../hooks/useCourse';
 
 // --- FUNÇÕES AUXILIARES (do Histórico) ---
 
@@ -66,6 +61,7 @@ const KpiCard: React.FC<{ title: string; value: string | number; color?: string 
 
 const Planejador: React.FC = () => {
   const { disciplinas, loading } = useDisciplinas();
+  const { selectedCourse } = useCourse();
   const [filtroTipo, setFiltroTipo] = useState<TipoFiltro>('todas');
   const [searchTerm, setSearchTerm] = useState(''); // Estado para busca
   const [disciplinaParaEditar, setDisciplinaParaEditar] = useState<DisciplinaUsuario | null>(null);
@@ -88,15 +84,15 @@ const Planejador: React.FC = () => {
     const concluidos = concluidasDisciplinas
       .filter(d => d.tipo === 'obrigatoria')
       .reduce((acc, d) => acc + d.creditos, 0);
-    return Math.max(0, TOTAL_OBRIGATORIAS - concluidos);
-  }, [concluidasDisciplinas]);
+    return Math.max(0, selectedCourse.totalObrigatorias - concluidos); 
+  }, [concluidasDisciplinas, selectedCourse]);
   
   const creditosLimitadosRestantes = useMemo(() => {
     const concluidos = concluidasDisciplinas
       .filter(d => d.tipo === 'limitada')
       .reduce((acc, d) => acc + d.creditos, 0);
-    return Math.max(0, TOTAL_LIMITADAS - concluidos);
-  }, [concluidasDisciplinas]);
+    return Math.max(0, selectedCourse.totalLimitadas - concluidos); 
+  }, [concluidasDisciplinas, selectedCourse]);
 
   
   // Filtra e agrupa as disciplinas para exibição
