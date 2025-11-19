@@ -3,9 +3,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Box, Typography,
   TextField, FormControl, InputLabel, Select, MenuItem, Autocomplete, Paper, List,
-  ListItem, ListItemText, ListItemIcon, Chip, Stack, Alert, 
+  ListItem, ListItemText, ListItemIcon, Chip, Stack, Alert,
   ToggleButtonGroup, ToggleButton, IconButton, DialogContentText,
-  useMediaQuery, useTheme // <-- Importes novos
+  useMediaQuery, useTheme
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -21,6 +21,7 @@ import { getTipoPadrao } from '../data/cursos';
 interface DisciplinaModalProps {
   open: boolean;
   onClose: () => void;
+  // Disciplina a ser editada (se for edição)
   disciplinaToEdit?: DisciplinaUsuario | null;
 }
 
@@ -33,6 +34,7 @@ type FormState = {
   nota: string;
 };
 
+// Cria um objeto de catálogo a partir de uma disciplina do usuário (útil para edição)
 const createCatalogoFromDisciplina = (disciplina: DisciplinaUsuario): CatalogoDisciplina => ({
   codigo: disciplina.codigo,
   nome: disciplina.nome,
@@ -40,8 +42,10 @@ const createCatalogoFromDisciplina = (disciplina: DisciplinaUsuario): CatalogoDi
   prerequisitos: [],
 });
 
+// Define o estado inicial do formulário
 const getInitialState = (disciplina?: DisciplinaUsuario | null): FormState => {
   if (disciplina) {
+    // Estado para edição
     return {
       catalogo: createCatalogoFromDisciplina(disciplina),
       ano: disciplina.ano,
@@ -51,6 +55,7 @@ const getInitialState = (disciplina?: DisciplinaUsuario | null): FormState => {
       nota: disciplina.nota || '',
     };
   }
+  // Estado para nova disciplina
   return {
     catalogo: null,
     ano: new Date().getFullYear(),
@@ -68,29 +73,35 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // --- RESPONSIVIDADE ---
+  // --- Responsividade ---
   const theme = useTheme();
+  // True se for tela pequena (celular/tablet)
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   // ---------------------
 
+  // Zera o estado e erros ao abrir o modal ou mudar a disciplina
   useEffect(() => {
     setFormData(getInitialState(disciplinaToEdit));
     setError(null);
   }, [disciplinaToEdit, open]);
 
+  // Opções para o Autocomplete (inclui a disciplina atual se estiver editando)
   const autocompleteOptions = useMemo(() => {
     if (disciplinaToEdit) {
       const disciplinaCatalogo = createCatalogoFromDisciplina(disciplinaToEdit);
       const jaExiste = CATALOGO_MESTRE.some(d => d.codigo === disciplinaCatalogo.codigo);
+      // Garante que a disciplina sendo editada esteja nas opções
       if (jaExiste) return CATALOGO_MESTRE;
       return [disciplinaCatalogo, ...CATALOGO_MESTRE];
     }
     return CATALOGO_MESTRE;
   }, [disciplinaToEdit]);
 
+  // Lida com a seleção no Autocomplete
   const handleAutocompleteChange = (event: any, newValue: CatalogoDisciplina | null) => {
-    const tipoSugerido = newValue 
-      ? getTipoPadrao(newValue.codigo, selectedCourse.id) 
+    // Sugere o tipo padrão para o curso atual
+    const tipoSugerido = newValue
+      ? getTipoPadrao(newValue.codigo, selectedCourse.id)
       : 'obrigatoria';
 
     setFormData(prev => ({
@@ -101,6 +112,7 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
     if (newValue) setError(null);
   };
 
+  // Lida com a mudança de inputs simples (Ano, Nota)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -109,38 +121,47 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
     }));
   };
 
+  // Lida com a mudança de Quadrimestre
   const handleQuadChange = (e: any) => setFormData(prev => ({ ...prev, quadrimestre: e.target.value as 1 | 2 | 3 }));
+  // Lida com a mudança de Tipo
   const handleTipoChange = (e: any) => setFormData(prev => ({ ...prev, tipo: e.target.value as DisciplinaUsuario['tipo'] }));
+  // Lida com a mudança de Status (Planejada/Concluída)
   const handleStatusChange = (e: any, newStatus: string | null) => {
     if (newStatus) setFormData(prev => ({ ...prev, status: newStatus as DisciplinaUsuario['status'] }));
   };
 
+  // Validação básica do formulário
   const validate = (): boolean => {
     if (!formData.catalogo) { setError("Selecione uma disciplina válida."); return false; }
     if (!formData.ano || formData.ano < 2000 || formData.ano > new Date().getFullYear() + 10) { setError("Ano inválido."); return false; }
     setError(null); return true;
   };
 
+  // Envia os dados para adicionar ou atualizar
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
     try {
       if (disciplinaToEdit) {
-        const payload: any = { 
+        // Lógica de EDIÇÃO
+        const payload: any = {
           ano: formData.ano,
           quadrimestre: formData.quadrimestre,
           tipo: formData.tipo,
           status: formData.status,
         };
+        // Inclui nota apenas se for 'concluida'
         if (formData.status === 'concluida') {
-          payload.nota = formData.nota || ""; 
+          payload.nota = formData.nota || "";
         } else {
+          // Remove a nota se o status mudar para 'planejada'
           payload.nota = deleteField();
         }
         await updateDisciplina(disciplinaToEdit.id, payload);
       } else {
-        const { catalogo, ...dadosUsuario } = formData; 
+        // Lógica de ADICIONAR
+        const { catalogo, ...dadosUsuario } = formData;
         const dadosPayload: any = {
           codigo: catalogo!.codigo,
           nome: catalogo!.nome,
@@ -150,6 +171,7 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
           tipo: dadosUsuario.tipo,
           status: dadosUsuario.status,
         };
+        // Inclui nota se for 'concluida'
         if (dadosUsuario.status === 'concluida' && dadosUsuario.nota) {
           dadosPayload.nota = dadosUsuario.nota;
         }
@@ -165,31 +187,33 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      fullScreen={isMobile} // <--- AQUI: Tela cheia no mobile
-      maxWidth="md" 
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullScreen={isMobile} // Usa tela cheia no mobile
+      maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: isMobile ? 0 : 4 } // Remove bordas arredondadas no mobile
+        // Remove bordas arredondadas no modo tela cheia
+        sx: { borderRadius: isMobile ? 0 : 4 }
       }}
     >
       <DialogTitle sx={{ m: 0, p: 2, pr: 6, bgcolor: isMobile ? 'primary.main' : 'inherit', color: isMobile ? 'white' : 'inherit' }}>
         <Typography variant="h6" component="div" fontWeight="medium">
-          {disciplinaToEdit ? "Editar Disciplina" : "Adicionar"}
+          {disciplinaToEdit ? "Editar Disciplina" : "Adicionar Disciplina"}
         </Typography>
         {!isMobile && (
           <DialogContentText sx={{ fontSize: '0.875rem' }}>
-            Preencha os dados para planejar.
+            Preencha os dados para planejar a disciplina.
           </DialogContentText>
         )}
         <IconButton
           aria-label="close"
           onClick={onClose}
-          sx={{ 
-            position: 'absolute', right: 12, top: 12, 
-            color: isMobile ? 'white' : (theme) => theme.palette.grey[500] 
+          sx={{
+            position: 'absolute', right: 12, top: 12,
+            // Cor do ícone diferente se estiver no cabeçalho primário
+            color: isMobile ? 'white' : (theme) => theme.palette.grey[500]
           }}
         >
           <CloseIcon />
@@ -197,19 +221,21 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
       </DialogTitle>
 
       <Box component="form" id="disciplina-form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <DialogContent dividers sx={{ p: 3, bgcolor: 'grey.50' }}>
+        <DialogContent dividers sx={{ p: 3, bgcolor: 'grey.50', flexGrow: 1 }}>
           <Grid container spacing={3}>
-            {/* Coluna Esquerda */}
+            {/* Coluna Principal do Formulário */}
             <Grid item xs={12} md={7}>
               <Stack spacing={2.5}>
+                {/* Seleção da Disciplina */}
                 <Autocomplete
-                  options={autocompleteOptions} 
+                  options={autocompleteOptions}
                   getOptionLabel={(option) => `[${option.codigo}] ${option.nome}`}
                   value={formData.catalogo}
                   onChange={handleAutocompleteChange}
+                  // Não permite mudar a disciplina ao editar
                   disabled={!!disciplinaToEdit}
                   isOptionEqualToValue={(option, value) => option.codigo === value.codigo}
-                  renderInput={(params) => 
+                  renderInput={(params) =>
                     <TextField {...params} label="Selecionar Disciplina" required error={!!error && !formData.catalogo} />
                   }
                   renderOption={(props, option) => {
@@ -220,12 +246,14 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
                            <Typography variant="body2" noWrap>{option.nome}</Typography>
                            <Typography variant="caption" color="text.secondary">{option.codigo}</Typography>
                         </Box>
+                        {/* Mostra o tipo sugerido ao lado */}
                         <Chip size="small" label={tipoPadraoCurso} />
                       </Box>
                     );
                   }}
                 />
-                
+
+                {/* Ano e Quadrimestre */}
                 <Grid container spacing={2}>
                   <Grid item xs={6}>
                     <TextField label="Ano" name="ano" type="number" value={formData.ano} onChange={handleChange} required fullWidth />
@@ -242,6 +270,7 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
                   </Grid>
                 </Grid>
 
+                {/* Tipo e Status */}
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth required>
@@ -254,6 +283,7 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
                     </FormControl>
                   </Grid>
                   <Grid item xs={12} sm={6}>
+                    {/* Botões para selecionar Status */}
                     <ToggleButtonGroup value={formData.status} exclusive onChange={handleStatusChange} fullWidth color="primary">
                       <ToggleButton value="planejada">Planejada</ToggleButton>
                       <ToggleButton value="concluida">Concluída</ToggleButton>
@@ -261,6 +291,7 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
                   </Grid>
                 </Grid>
 
+                {/* Input de Nota (visível apenas se for 'concluida') */}
                 {formData.status === 'concluida' && (
                   <TextField label="Nota/Conceito" name="nota" value={formData.nota} onChange={handleChange} fullWidth />
                 )}
@@ -268,10 +299,10 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
                 {error && <Alert severity="error">{error}</Alert>}
               </Stack>
             </Grid>
-            
-            {/* Coluna Direita (Escondida em telas muito pequenas para economizar espaço, opcional) */}
+
+            {/* Coluna Lateral de Informações (Escondida no mobile) */}
             {!isMobile && (
-              <Grid item xs={12} md={5}>
+              <Grid item md={5}>
                 <Stack spacing={2}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="caption" color="text.secondary">Pré-visualização</Typography>
@@ -281,21 +312,21 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
                           {formData.catalogo.codigo} • {formData.catalogo.creditos} créditos
                         </Typography>
-                        <Chip label={`Tipo no Curso: ${getTipoPadrao(formData.catalogo.codigo, selectedCourse.id)}`} size="small" variant="outlined" />
+                        <Chip label={`Tipo Sugerido: ${getTipoPadrao(formData.catalogo.codigo, selectedCourse.id)}`} size="small" variant="outlined" />
                       </Box>
                     ) : (
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Selecione uma disciplina.</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Selecione uma disciplina para ver os detalhes.</Typography>
                     )}
                   </Paper>
                   <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.paper' }}>
                     <List dense>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 32 }}><CheckCircleOutlineIcon fontSize="small" color="success" /></ListItemIcon>
-                        <ListItemText primary="Tipo sugerido automaticamente." />
+                        <ListItemText primary="O tipo é sugerido pelo seu curso." />
                       </ListItem>
                       <ListItem>
                         <ListItemIcon sx={{ minWidth: 32 }}><LightbulbOutlineIcon fontSize="small" color="info" /></ListItemIcon>
-                        <ListItemText primary="Concluídas vão para o Histórico." />
+                        <ListItemText primary="Disciplinas 'Concluídas' vão para a seção Histórico." />
                       </ListItem>
                     </List>
                   </Paper>
@@ -304,7 +335,7 @@ const DisciplinaModal: React.FC<DisciplinaModalProps> = ({ open, onClose, discip
             )}
           </Grid>
         </DialogContent>
-        
+
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={onClose} color="inherit">Cancelar</Button>
           <Button type="submit" form="disciplina-form" variant="contained" disabled={loading}>
